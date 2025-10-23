@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -53,6 +53,16 @@ def load_model():
 
 # Load model on startup
 model_loaded = load_model()
+
+# Serve index.html from frontend folder (go up one level from backend)
+@app.route('/')
+def serve_index():
+    return send_from_directory('../frontend', 'index.html')
+
+# Serve other static files (CSS, JS, images) from frontend folder
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('../frontend', path)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -117,8 +127,9 @@ def reload_model():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@app.route('/', methods=['GET'])
-def home():
+# Keep the API docs at a different route if needed
+@app.route('/api', methods=['GET'])
+def api_docs():
     return jsonify({
         'message': 'FinBERT Indian Finance Sentiment Analysis API',
         'model': MODEL_NAME,
