@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend communication
 
 # Correct path to your model files within the repository
-MODEL_NAME = "chintu1546/finbert-indian-finance/finbert_indian_finance"
+MODEL_NAME = "chintu1546/finbert-indian-finance"
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 print("Initializing FinBERT Analyzer...")
@@ -191,3 +191,4 @@ if __name__ == '__main__':
     print(f"📍 Model path: {MODEL_NAME}")
     
     app.run(host=host, port=port, debug=False)
+
