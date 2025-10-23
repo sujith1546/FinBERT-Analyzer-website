@@ -24,7 +24,7 @@ def load_model():
     """Load the model with retry logic and error handling"""
     global tokenizer, model
     
-    max_retries = 3
+    max_retries = 2
     retry_delay = 5  # seconds
     
     for attempt in range(max_retries):
@@ -36,19 +36,44 @@ def load_model():
             if hf_token:
                 login(token=hf_token)
                 print("✅ Logged into Hugging Face Hub")
-            else:
-                print("⚠️  No Hugging Face token found, trying without authentication")
             
-            # Load tokenizer and model
-            tokenizer = AutoTokenizer.from_pretrained(
-                MODEL_NAME, 
-                trust_remote_code=True
-            )
-            model = AutoModelForSequenceClassification.from_pretrained(
-                MODEL_NAME,
-                trust_remote_code=True
-            )
+            # Try to load tokenizer with different approaches
+            tokenizer_loaded = False
+            tokenizer_errors = []
             
+            # Method 1: Try AutoTokenizer
+            try:
+                tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+                tokenizer_loaded = True
+                print("✅ Tokenizer loaded with AutoTokenizer")
+            except Exception as e1:
+                tokenizer_errors.append(f"AutoTokenizer: {str(e1)}")
+            
+            # Method 2: Try BertTokenizerFast
+            if not tokenizer_loaded:
+                try:
+                    from transformers import BertTokenizerFast
+                    tokenizer = BertTokenizerFast.from_pretrained(MODEL_NAME)
+                    tokenizer_loaded = True
+                    print("✅ Tokenizer loaded with BertTokenizerFast")
+                except Exception as e2:
+                    tokenizer_errors.append(f"BertTokenizerFast: {str(e2)}")
+            
+            # Method 3: Try basic BertTokenizer
+            if not tokenizer_loaded:
+                try:
+                    from transformers import BertTokenizer
+                    tokenizer = BertTokenizer.from_pretrained(MODEL_NAME)
+                    tokenizer_loaded = True
+                    print("✅ Tokenizer loaded with BertTokenizer")
+                except Exception as e3:
+                    tokenizer_errors.append(f"BertTokenizer: {str(e3)}")
+            
+            if not tokenizer_loaded:
+                raise Exception(f"All tokenizer methods failed: {tokenizer_errors}")
+            
+            # Load model
+            model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
             model.to(device)
             model.eval()
             
