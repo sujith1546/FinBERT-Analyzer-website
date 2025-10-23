@@ -9,8 +9,8 @@ import time
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend communication
 
-# Hugging Face model repo
-MODEL_NAME = "chintu1546/finbert-indian-finance"
+# Correct path to your model files within the repository
+MODEL_NAME = "chintu1546/finbert-indian-finance/finbert_indian_finance"
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 print("Initializing FinBERT Analyzer...")
@@ -24,12 +24,13 @@ def load_model():
     """Load the model with retry logic and error handling"""
     global tokenizer, model
     
-    max_retries = 2
+    max_retries = 3
     retry_delay = 5  # seconds
     
     for attempt in range(max_retries):
         try:
             print(f"Loading model from Hugging Face... (Attempt {attempt + 1}/{max_retries})")
+            print(f"Model path: {MODEL_NAME}")
             
             # Login with Hugging Face token
             hf_token = os.environ.get('HUGGINGFACE_HUB_TOKEN')
@@ -37,43 +38,16 @@ def load_model():
                 login(token=hf_token)
                 print("✅ Logged into Hugging Face Hub")
             
-            # Try to load tokenizer with different approaches
-            tokenizer_loaded = False
-            tokenizer_errors = []
+            # Load tokenizer and model from the correct subfolder
+            tokenizer = AutoTokenizer.from_pretrained(
+                MODEL_NAME, 
+                trust_remote_code=True
+            )
+            model = AutoModelForSequenceClassification.from_pretrained(
+                MODEL_NAME,
+                trust_remote_code=True
+            )
             
-            # Method 1: Try AutoTokenizer
-            try:
-                tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-                tokenizer_loaded = True
-                print("✅ Tokenizer loaded with AutoTokenizer")
-            except Exception as e1:
-                tokenizer_errors.append(f"AutoTokenizer: {str(e1)}")
-            
-            # Method 2: Try BertTokenizerFast
-            if not tokenizer_loaded:
-                try:
-                    from transformers import BertTokenizerFast
-                    tokenizer = BertTokenizerFast.from_pretrained(MODEL_NAME)
-                    tokenizer_loaded = True
-                    print("✅ Tokenizer loaded with BertTokenizerFast")
-                except Exception as e2:
-                    tokenizer_errors.append(f"BertTokenizerFast: {str(e2)}")
-            
-            # Method 3: Try basic BertTokenizer
-            if not tokenizer_loaded:
-                try:
-                    from transformers import BertTokenizer
-                    tokenizer = BertTokenizer.from_pretrained(MODEL_NAME)
-                    tokenizer_loaded = True
-                    print("✅ Tokenizer loaded with BertTokenizer")
-                except Exception as e3:
-                    tokenizer_errors.append(f"BertTokenizer: {str(e3)}")
-            
-            if not tokenizer_loaded:
-                raise Exception(f"All tokenizer methods failed: {tokenizer_errors}")
-            
-            # Load model
-            model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
             model.to(device)
             model.eval()
             
@@ -143,7 +117,8 @@ def predict():
             'sentiment': id2label[predicted_class],
             'confidence': round(confidence, 4),
             'probabilities': probs,
-            'status': 'success'
+            'status': 'success',
+            'model': 'your_finbert_indian_finance'
         })
 
     except Exception as e:
@@ -162,7 +137,8 @@ def health():
         'status': status,
         'model_loaded': model is not None,
         'device': str(device),
-        'service': 'FinBERT Financial Sentiment Analysis'
+        'service': 'FinBERT Indian Finance Analysis',
+        'model_path': MODEL_NAME
     })
 
 @app.route('/reload-model', methods=['POST'])
@@ -193,7 +169,8 @@ def reload_model():
 def home():
     """Root endpoint with service information"""
     return jsonify({
-        'message': 'FinBERT Financial Sentiment Analysis API',
+        'message': 'FinBERT Indian Finance Sentiment Analysis API',
+        'model': 'chintu1546/finbert-indian-finance/finbert_indian_finance',
         'endpoints': {
             'health': '/health (GET)',
             'predict': '/predict (POST)',
@@ -211,5 +188,6 @@ if __name__ == '__main__':
     print(f"🚀 Starting Flask server on {host}:{port}")
     print(f"📊 Model status: {'✅ Loaded' if model_loaded else '❌ Failed'}")
     print(f"🔧 Device: {device}")
+    print(f"📍 Model path: {MODEL_NAME}")
     
     app.run(host=host, port=port, debug=False)
