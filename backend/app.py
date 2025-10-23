@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from huggingface_hub import login
 import os
 import time
 
@@ -29,6 +30,14 @@ def load_model():
     for attempt in range(max_retries):
         try:
             print(f"Loading model from Hugging Face... (Attempt {attempt + 1}/{max_retries})")
+            
+            # Login with Hugging Face token
+            hf_token = os.environ.get('HUGGINGFACE_HUB_TOKEN')
+            if hf_token:
+                login(token=hf_token)
+                print("✅ Logged into Hugging Face Hub")
+            else:
+                print("⚠️  No Hugging Face token found, trying without authentication")
             
             # Load tokenizer and model
             tokenizer = AutoTokenizer.from_pretrained(
