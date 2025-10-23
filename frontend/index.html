@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinBERT Sentiment Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Animation Keyframes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideIn {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+        
+        @keyframes slideInFromRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideInFromLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.5); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        /* Animation Classes */
+        .animate-fadeIn { 
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        
+        .animate-slideIn { 
+            animation: slideIn 0.8s ease-out forwards;
+            transform-origin: left;
+        }
+        
+        .animate-slideInFromRight {
+            animation: slideInFromRight 0.5s ease-out forwards;
+        }
+        
+        .animate-slideInFromLeft {
+            animation: slideInFromLeft 0.5s ease-out forwards;
+        }
+        
+        .animate-scaleIn {
+            animation: scaleIn 0.4s ease-out forwards;
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .animate-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        .animate-countUp {
+            animation: countUp 0.5s ease-out forwards;
+        }
+        
+        .animate-glow {
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* Page Transitions */
+        .page-transition {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        
+        .page-hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            display: none;
+        }
+        
+        .page-active {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+        
+        /* Staggered Animation for Cards */
+        .stagger-animation > * {
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        .stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
+        .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
+        .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
+        .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
+        .stagger-animation > *:nth-child(5) { animation-delay: 0.5s; }
+        .stagger-animation > *:nth-child(6) { animation-delay: 0.6s; }
+        
+        /* Hover Effects */
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .hover-scale {
+            transition: transform 0.2s ease;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+        
+        /* Enhanced Navigation Button Styles */
+        .nav-button {
+            position: relative;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .nav-button:hover::before {
+            left: 100%;
+        }
+        
+        .nav-button-inactive {
+            background: rgba(255, 255, 255, 0.1);
+            color: #6b7280;
+            border: 1px solid rgba(229, 231, 235, 0.3);
+        }
+        
+        .nav-button-inactive:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #4b5563;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-button-active {
+            background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+            color: white;
+            box-shadow: 0 8px 16px rgba(124, 58, 237, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .nav-button-active:hover {
+            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.4);
+            transform: translateY(-3px);
+        }
+        
+        .nav-button-active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+            border-radius: 2px;
+        }
+        
+        /* Button Animations */
+        .btn-animate {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-animate::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-animate:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Tab Animation */
+        .tab-indicator {
+            position: absolute;
+            bottom: 0;
+            height: 3px;
+            background: #7c3aed;
+            transition: left 0.3s ease, width 0.3s ease;
+        }
+        
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        /* Chart Animation */
+        .chart-bar {
+            transform-origin: bottom;
+            animation: growBar 1s ease-out forwards;
+        }
+        
+        @keyframes growBar {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+        
+        /* Text Gradient */
+        .gradient-text {
+            background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Focus States */
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        /* Navigation Container */
+        .nav-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+        }
+        
+        /* Icon Animation */
+        .nav-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-button:hover .nav-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .nav-button-active .nav-icon {
+            transform: scale(1.1);
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="nav-container border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 animate-slideInFromLeft">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center hover-scale animate-glow">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold text-gray-900">FinBERT Analyzer</h1>
+                        <p class="text-xs text-gray-500">AI-Powered Financial Sentiment</p>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Navigation Tabs -->
+                <div class="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+                    <button onclick="showPage('analyzer')" id="analyzerTab" class="nav-button nav-button-active flex items-center gap-2">
+                        <svg class="nav-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span>Analyzer</span>
+                    </button>
+                    <button onclick="showPage('newsfeed')" id="newsfeedTab" class="nav-button nav-button-inactive flex items-center gap-2">
+                        <svg class="nav-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>News Feed</span>
+                    </button>
+                    <button onclick="showPage('insights')" id="insightsTab" class="nav-button nav-button-inactive flex items-center gap-2">
+                        <svg class="nav-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        <span>Insights</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-2 text-sm animate-slideInFromRight">
+                    <span class="px-3 py-1 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-xs font-medium border border-purple-200">v1.0</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Analyzer Page -->
+    <div id="analyzerPage" class="page-transition page-active">
+    <div class="max-w-7xl mx-auto px-6 py-10">
+        <!-- Hero Section -->
+        <div class="text-center mb-12 animate-fadeIn">
+            <h2 class="text-5xl font-bold text-gray-900 mb-3">
+                Financial Sentiment <span class="gradient-text">Analysis</span>
+            </h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                Powered by FinBERT AI to analyze sentiment in financial news and statements with precision
+            </p>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid lg:grid-cols-3 gap-6 items-start stagger-animation">
+            <!-- Left Column - Input -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift">
+                    <div class="mb-4">
+                        <div class="flex items-center mb-2">
+                            <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            <label class="text-sm font-semibold text-gray-900">
+                                Input Text
+                            </label>
+                        </div>
+                        <p class="text-sm text-gray-500 ml-7">
+                            Enter financial news, earnings reports, or market statements for analysis
+                        </p>
+                    </div>
+
+                    <!-- Title and Source Row -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ticker Symbol (Optional)</label>
+                            <input 
+                                type="text" 
+                                id="tickerInput"
+                                placeholder="e.g., RELIANCE.NS"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm text-gray-900 placeholder-gray-400 focus-ring transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Source (Optional)</label>
+                            <input 
+                                type="text" 
+                                id="sourceInput"
+                                placeholder="e.g., Financial Times"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm text-gray-900 placeholder-gray-400 focus-ring transition-all"
+                            />
+                        </div>
+                    </div>
+                    
+                    <textarea
+                        id="textInput"
+                        placeholder="Example: The company reported exceptional quarterly results, with revenue increasing by 35% year-over-year, significantly beating market expectations..."
+                        class="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm text-gray-900 placeholder-gray-400 focus-ring transition-all"
+                    ></textarea>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-4 flex gap-3">
+                        <button
+                            onclick="analyzeSentiment()"
+                            id="analyzeBtn"
+                            class="flex items-center justify-center px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 transition-all text-sm btn-animate shadow-lg hover:shadow-xl"
+                        >
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            Analyze Sentiment
+                        </button>
+                        <button
+                            onclick="clearInput()"
+                            class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm btn-animate"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Examples -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Quick Examples</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setExample(0)" class="flex items-center text-sm px-4 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors text-left hover-scale">
+                            <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                            Strong Earnings
+                        </button>
+                        <button onclick="setExample(1)" class="flex items-center text-sm px-4 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors text-left hover-scale">
+                            <svg class="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                            </svg>
+                            Market Decline
+                        </button>
+                        <button onclick="setExample(2)" class="flex items-center text-sm px-4 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors text-left hover-scale">
+                            <svg class="w-4 h-4 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
+                            </svg>
+                            Steady Performance
+                        </button>
+                        <button onclick="setExample(3)" class="flex items-center text-sm px-4 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors text-left hover-scale">
+                            <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            Bold Merger
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorBox" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 animate-scaleIn">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-semibold text-red-900" id="errorMessage"></p>
+                            <p class="text-sm text-red-700 mt-1">Ensure the Flask backend is running on <code class="bg-red-100 px-1.5 py-0.5 rounded font-mono text-xs">localhost:5000</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Info Card -->
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-6 hover-lift">
+                    <!-- About FinBERT -->
+                    <div>
+                        <div class="flex items-center mb-4">
+                            <svg class="w-5 h-5 text-gray-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01"/>
+                            </svg>
+                            <h3 class="text-sm font-semibold text-gray-900">About FinBERT</h3>
+                        </div>
+                        <div class="space-y-3 text-sm text-gray-700">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <div>
+                                    <p class="font-medium text-gray-900">Pre-trained on Financial Data</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">Optimized for financial text output</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <div>
+                                    <p class="font-medium text-gray-900">Optimized for Indian Markets</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">Fine-tuned on Indian financial contexts</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <div>
+                                    <p class="font-medium text-gray-900">Three-class Classification</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">Positive, neutral, or negative sentiment</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Setup Requirements -->
+                    <div class="border-t border-gray-200 pt-6">
+                        <div class="flex items-center mb-4">
+                            <svg class="w-5 h-5 text-gray-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01"/>
+                            </svg>
+                            <h4 class="text-sm font-semibold text-gray-900">Setup Requirements</h4>
+                        </div>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <p>• Flask backend running</p>
+                            <p>• Model: ProsusAI/finbert (Hugging Face - Indian/finetuned)</p>
+                            <p>• Port 5000 accessible</p>
+                        </div>
+                    </div>
+
+                    <!-- Model Information -->
+                    <div class="border-t border-gray-200 pt-6">
+                        <h4 class="text-xs font-semibold text-gray-900 mb-3">Model Information</h4>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <p class="text-gray-500 mb-1">Architecture</p>
+                                <p class="font-medium text-gray-900">BERT-based</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 mb-1">Framework</p>
+                                <p class="font-medium text-gray-900">Transformers</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 mb-1">Classes</p>
+                                <p class="font-medium text-gray-900">3 Sentiments</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 mb-1">Provider</p>
+                                <p class="font-medium text-gray-900">Flask API</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsBox" class="hidden mt-8 animate-fadeIn">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover-lift">
+                <!-- Header with Icon -->
+                <div class="flex items-center mb-8">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Analysis Results</h2>
+                </div>
+                
+                <!-- Sentiment Overview -->
+                <div class="grid md:grid-cols-2 gap-5 mb-10">
+                    <div id="sentimentCard" class="rounded-2xl p-6 border-2 animate-scaleIn">
+                        <div class="flex items-center mb-3">
+                            <svg id="sentimentIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                            <p class="text-sm font-semibold text-gray-700">Sentiment</p>
+                        </div>
+                        <p id="sentimentText" class="text-4xl font-bold mb-2"></p>
+                        <p class="text-sm text-gray-500">Primary classification</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-2xl p-6 border-2 border-gray-200 animate-scaleIn">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            <p class="text-sm font-semibold text-gray-700">Confidence Score</p>
+                        </div>
+                        <p id="confidenceText" class="text-4xl font-bold text-gray-900 mb-2"></p>
+                        <p class="text-sm text-gray-500">Model certainty level</p>
+                    </div>
+                </div>
+
+                <!-- Probability Distribution -->
+                <div class="space-y-6">
+                    <div class="flex items-center mb-6">
+                        <svg class="w-5 h-5 text-gray-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-bold text-gray-900">Probability Distribution</h3>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
+                                <span class="text-base font-semibold text-gray-900">Positive</span>
+                            </div>
+                            <span id="posProb" class="text-base font-bold text-gray-900"></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div id="posBar" class="h-full bg-emerald-500 rounded-full animate-slideIn"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-gray-600 rounded-full mr-3"></div>
+                                <span class="text-base font-semibold text-gray-900">Neutral</span>
+                            </div>
+                            <span id="neuProb" class="text-base font-bold text-gray-900"></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div id="neuBar" class="h-full bg-gray-600 rounded-full animate-slideIn"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
+                                <span class="text-base font-semibold text-gray-900">Negative</span>
+                            </div>
+                            <span id="negProb" class="text-base font-bold text-gray-900"></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div id="negBar" class="h-full bg-red-500 rounded-full animate-slideIn"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-16 pb-8 text-center text-sm text-gray-500">
+        <p>FinBERT Sentiment Analyzer • Built with Transformers & Flask</p>
+    </footer>
+    </div>
+    <!-- End Analyzer Page -->
+
+    <!-- News Feed Page -->
+    <div id="newsfeedPage" class="page-transition page-hidden">
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-8 animate-fadeIn">
+                <div>
+                    <h2 class="text-4xl font-bold text-gray-900 mb-2">
+                        News <span class="gradient-text">Feed</span>
+                    </h2>
+                    <p class="text-gray-600">Browse all analyzed financial news articles</p>
+                </div>
+                <button onclick="refreshNewsFeed()" class="flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors btn-animate">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-4 gap-4 mb-8 stagger-animation">
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-3">
+                        <p class="text-sm font-medium text-gray-600">All News</p>
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <p id="totalNewsCount" class="text-3xl font-bold text-gray-900 animate-countUp">0</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-3">
+                        <p class="text-sm font-medium text-gray-600">Positive</p>
+                        <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <p id="positiveNewsCount" class="text-3xl font-bold text-gray-900 animate-countUp">0</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-3">
+                        <p class="text-sm font-medium text-gray-600">Neutral</p>
+                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
+                        </svg>
+                    </div>
+                    <p id="neutralNewsCount" class="text-3xl font-bold text-gray-900 animate-countUp">0</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-3">
+                        <p class="text-sm font-medium text-gray-600">Negative</p>
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                        </svg>
+                    </div>
+                    <p id="negativeNewsCount" class="text-3xl font-bold text-gray-900 animate-countUp">0</p>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6 hover-lift">
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 relative">
+                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <input type="text" id="searchInput" onkeyup="filterNews()" placeholder="Search news articles..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm focus-ring transition-all">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="filterBySentiment('all')" id="filterAll" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition-colors btn-animate">All</button>
+                        <button onclick="filterBySentiment('positive')" id="filterPositive" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors btn-animate">Positive</button>
+                        <button onclick="filterBySentiment('neutral')" id="filterNeutral" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors btn-animate">Neutral</button>
+                        <button onclick="filterBySentiment('negative')" id="filterNegative" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors btn-animate">Negative</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Articles Container -->
+            <div id="newsArticlesContainer" class="stagger-animation">
+                <!-- Articles will be dynamically loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-12 text-gray-500 hidden">
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <p class="text-lg font-medium">No articles to display</p>
+                <p class="text-sm">Analyze some financial news to see them here</p>
+            </div>
+        </div>
+
+        <footer class="mt-16 pb-8 text-center text-sm text-gray-500">
+            <p>FinBERT Sentiment Analyzer • Built with Transformers & Flask</p>
+        </footer>
+    </div>
+    <!-- End News Feed Page -->
+
+    <!-- Insights Page -->
+    <div id="insightsPage" class="page-transition page-hidden">
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            <!-- Header -->
+            <div class="mb-8 animate-fadeIn">
+                <h2 class="text-4xl font-bold text-gray-900 mb-2">
+                    Sentiment <span class="gradient-text">Insights</span>
+                </h2>
+                <p class="text-gray-600">Analytics and trends from your sentiment analysis</p>
+            </div>
+
+            <!-- Stats Cards Row -->
+            <div class="grid grid-cols-4 gap-4 mb-8 stagger-animation">
+                <!-- Total Analyses -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                        </div>
+                        <span class="text-xs font-medium text-gray-500">Total</span>
+                    </div>
+                    <p id="insightsTotalCount" class="text-3xl font-bold text-gray-900 mb-1 animate-countUp">0</p>
+                    <p class="text-sm text-gray-600">Total Analyses</p>
+                </div>
+
+                <!-- Avg Confidence -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                        </div>
+                        <span class="text-xs font-medium text-gray-500">Avg</span>
+                    </div>
+                    <p id="insightsAvgConfidence" class="text-3xl font-bold text-gray-900 mb-1 animate-countUp">0%</p>
+                    <p class="text-sm text-gray-600">Avg Confidence</p>
+                </div>
+
+                <!-- Positive News -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                        </div>
+                        <span id="insightsPositivePercentBadge" class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">0%</span>
+                    </div>
+                    <p id="insightsPositiveCount" class="text-3xl font-bold text-emerald-600 mb-1 animate-countUp">0</p>
+                    <p class="text-sm text-gray-600">Positive News</p>
+                </div>
+
+                <!-- Negative News -->
+                <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                            </svg>
+                        </div>
+                        <span id="insightsNegativePercentBadge" class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">0%</span>
+                    </div>
+                    <p id="insightsNegativeCount" class="text-3xl font-bold text-red-600 mb-1 animate-countUp">0</p>
+                    <p class="text-sm text-gray-600">Negative News</p>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid lg:grid-cols-3 gap-6">
+                <!-- Left Column - Charts -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Neutral Sentiment Card -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                        <div class="flex items-center mb-6">
+                            <svg class="w-5 h-5 text-gray-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
+                            </svg>
+                            <h3 class="text-lg font-bold text-gray-900">Sentiment Overview</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-6">Overall sentiment distribution</p>
+                        
+                        <div class="grid grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <p id="overviewPositivePercent" class="text-3xl font-bold text-emerald-600 mb-2 animate-countUp">0%</p>
+                                <p class="text-sm text-gray-600">Positive</p>
+                            </div>
+                            <div class="text-center">
+                                <p id="overviewNeutralPercent" class="text-3xl font-bold text-gray-600 mb-2 animate-countUp">0%</p>
+                                <p class="text-sm text-gray-600">Neutral</p>
+                            </div>
+                            <div class="text-center">
+                                <p id="overviewNegativePercent" class="text-3xl font-bold text-red-600 mb-2 animate-countUp">0%</p>
+                                <p class="text-sm text-gray-600">Negative</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sentiment Distribution -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                        <div class="flex items-center mb-6">
+                            <svg class="w-5 h-5 text-gray-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+                            </svg>
+                            <h3 class="text-lg font-bold text-gray-900">Sentiment Distribution</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-6">Overall breakdown of analyzed content</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-emerald-500 rounded-full mr-2"></div>
+                                        <span class="text-sm font-semibold text-gray-900">Positive</span>
+                                    </div>
+                                    <span id="distPositiveLabel" class="text-sm font-bold text-gray-900">0 (0%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div id="distPositiveBar" class="h-full bg-emerald-500 rounded-full animate-slideIn" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-gray-600 rounded-full mr-2"></div>
+                                        <span class="text-sm font-semibold text-gray-900">Neutral</span>
+                                    </div>
+                                    <span id="distNeutralLabel" class="text-sm font-bold text-gray-900">0 (0%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div id="distNeutralBar" class="h-full bg-gray-600 rounded-full animate-slideIn" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                                        <span class="text-sm font-semibold text-gray-900">Negative</span>
+                                    </div>
+                                    <span id="distNegativeLabel" class="text-sm font-bold text-gray-900">0 (0%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div id="distNegativeBar" class="h-full bg-red-500 rounded-full animate-slideIn" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Analysis Activity -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                        <div class="flex items-center mb-6">
+                            <svg class="w-5 h-5 text-gray-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <h3 class="text-lg font-bold text-gray-900">Recent Analysis Activity</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-6">Analysis volume over the past 7 days</p>
+                        
+                        <div id="activityChart" class="h-48 flex items-end justify-between gap-2">
+                            <!-- Chart bars will be rendered here -->
+                        </div>
+                        <div id="activityLabels" class="flex justify-between text-xs text-gray-500 mt-2">
+                            <!-- Day labels will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Side Widgets -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Top Sources -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 hover-lift">
+                        <div class="flex items-center mb-6">
+                            <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <h3 class="text-base font-bold text-gray-900">Top Sources</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-4">Most analyzed news sources</p>
+
+                        <div id="topSourcesList" class="space-y-3">
+                            <!-- Top sources will be rendered here -->
+                        </div>
+                        
+                        <div id="noSourcesMessage" class="text-center py-6 text-gray-400 text-sm hidden">
+                            No sources recorded yet
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="bg-purple-50 rounded-xl border border-purple-200 p-6 hover-lift">
+                        <div class="flex items-center mb-6">
+                            <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <h3 class="text-base font-bold text-gray-900">Quick Stats</h3>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Avg Confidence</span>
+                                <span id="quickStatsConfidence" class="text-sm font-bold text-gray-900 animate-countUp">0%</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Most Common</span>
+                                <span id="quickStatsMostCommon" class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">N/A</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">This Week</span>
+                                <span id="quickStatsThisWeek" class="text-sm font-bold text-gray-900 animate-countUp">0 analyses</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-16 pb-8 text-center text-sm text-gray-500">
+            <p>FinBERT Sentiment Analyzer • Built with Transformers & Flask</p>
+        </footer>
+    </div>
+    <!-- End Insights Page -->
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="flex items-center">
+            <svg id="toastIcon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id="toastMessage">Operation completed successfully</span>
+        </div>
+    </div>
+
+    <script>
+        // ===== SUPABASE CONFIGURATION =====
+        // Replace with your actual Supabase URL and anon key
+        const SUPABASE_URL = 'https://yovpiwmvgfuxxakaffqi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdnBpd212Z2Z1eHhha2FmZnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExODMxNDksImV4cCI6MjA3Njc1OTE0OX0.k2bHHQW4YyQF3i_G60TFDmr8vB0kDw0JJka1xJo5Bhc';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ===== GLOBAL VARIABLES =====
+        let allArticles = [];
+        let currentFilter = 'all';
+
+        const examples = [
+            "Reliance Industries reported record profits with a 25% increase in quarterly earnings, exceeding analyst expectations and demonstrating strong operational performance across all business segments.",
+            "The company's stock plummeted 15% after reporting disappointing quarterly earnings that missed expectations, coupled with lowered forward guidance and concerns about market headwinds.",
+            "Infosys announced steady performance with quarterly results in line with market expectations, maintaining consistent growth trajectory and reaffirming annual revenue guidance.",
+            "HDFC Bank's historic merger with HDFC Ltd creates India's largest private sector bank with combined assets exceeding $150 billion, marking a significant milestone in Indian banking."
+        ];
+
+        // ===== PAGE NAVIGATION =====
+        function showPage(pageName) {
+            // Hide all pages with animation
+            const pages = ['analyzerPage', 'newsfeedPage', 'insightsPage'];
+            pages.forEach(page => {
+                const pageElement = document.getElementById(page);
+                pageElement.classList.remove('page-active');
+                pageElement.classList.add('page-hidden');
+            });
+
+            // Reset tab styles
+            const tabs = ['analyzerTab', 'newsfeedTab', 'insightsTab'];
+            tabs.forEach(tab => {
+                const tabElement = document.getElementById(tab);
+                tabElement.classList.remove('nav-button-active');
+                tabElement.classList.add('nav-button-inactive');
+            });
+
+            // Show selected page with animation
+            setTimeout(() => {
+                if (pageName === 'analyzer') {
+                    document.getElementById('analyzerPage').classList.remove('page-hidden');
+                    document.getElementById('analyzerPage').classList.add('page-active');
+                    document.getElementById('analyzerTab').classList.remove('nav-button-inactive');
+                    document.getElementById('analyzerTab').classList.add('nav-button-active');
+                } else if (pageName === 'newsfeed') {
+                    document.getElementById('newsfeedPage').classList.remove('page-hidden');
+                    document.getElementById('newsfeedPage').classList.add('page-active');
+                    document.getElementById('newsfeedTab').classList.remove('nav-button-inactive');
+                    document.getElementById('newsfeedTab').classList.add('nav-button-active');
+                    loadNewsFeed();
+                } else if (pageName === 'insights') {
+                    document.getElementById('insightsPage').classList.remove('page-hidden');
+                    document.getElementById('insightsPage').classList.add('page-active');
+                    document.getElementById('insightsTab').classList.remove('nav-button-inactive');
+                    document.getElementById('insightsTab').classList.add('nav-button-active');
+                    loadInsights();
+                }
+            }, 100);
+        }
+
+        // ===== TOAST NOTIFICATION =====
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMessage.textContent = message;
+            
+            // Set icon based on type
+            if (type === 'success') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                toastIcon.className = 'w-5 h-5 mr-2 text-emerald-600';
+                toast.className = 'toast bg-emerald-50 border border-emerald-200';
+            } else if (type === 'error') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                toastIcon.className = 'w-5 h-5 mr-2 text-red-600';
+                toast.className = 'toast bg-red-50 border border-red-200';
+            } else {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                toastIcon.className = 'w-5 h-5 mr-2 text-blue-600';
+                toast.className = 'toast bg-blue-50 border border-blue-200';
+            }
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ===== ANALYZER PAGE FUNCTIONS =====
+        function setExample(index) {
+            document.getElementById('textInput').value = examples[index];
+        }
+
+        function clearInput() {
+            document.getElementById('textInput').value = '';
+            document.getElementById('tickerInput').value = '';
+            document.getElementById('sourceInput').value = '';
+            document.getElementById('errorBox').classList.add('hidden');
+            document.getElementById('resultsBox').classList.add('hidden');
+        }
+
+        async function analyzeSentiment() {
+            const text = document.getElementById('textInput').value.trim();
+            const ticker = document.getElementById('tickerInput').value.trim();
+            const source = document.getElementById('sourceInput').value.trim();
+            const errorBox = document.getElementById('errorBox');
+            const resultsBox = document.getElementById('resultsBox');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            if (!text) {
+                showError('Please enter text to analyze');
+                return;
+            }
+
+            errorBox.classList.add('hidden');
+            resultsBox.classList.add('hidden');
+
+            analyzeBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Analyzing...';
+            analyzeBtn.disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text }),
+                });
+
+                if (!response.ok) throw new Error('Analysis failed');
+
+                const data = await response.json();
+                
+                // Save to Supabase
+                await saveToDatabase(text, ticker, source, data);
+                
+                displayResults(data);
+                showToast('Analysis completed successfully', 'success');
+            } catch (err) {
+                showError('Connection error. Verify Flask server is running on port 5000.');
+                showToast('Analysis failed. Please try again.', 'error');
+                console.error(err);
+            } finally {
+                analyzeBtn.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Analyze Sentiment';
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        async function saveToDatabase(text, ticker, source, data) {
+            try {
+                const { error } = await supabase
+                    .from('sentiment_analyses')
+                    .insert([{
+                        text: text,
+                        ticker: ticker || null,
+                        source: source || null,
+                        sentiment: data.sentiment,
+                        confidence: data.confidence,
+                        positive_prob: data.probabilities.positive,
+                        neutral_prob: data.probabilities.neutral,
+                        negative_prob: data.probabilities.negative
+                    }]);
+
+                if (error) {
+                    console.error('Error saving to database:', error);
+                }
+            } catch (err) {
+                console.error('Database error:', err);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorBox').classList.remove('hidden');
+        }
+
+        function displayResults(data) {
+            const sentiment = data.sentiment.toUpperCase();
+            
+            document.getElementById('sentimentText').textContent = sentiment;
+            document.getElementById('confidenceText').textContent = `${(data.confidence * 100).toFixed(0)}%`;
+
+            const sentimentCard = document.getElementById('sentimentCard');
+            const sentimentIcon = document.getElementById('sentimentIcon');
+            sentimentCard.className = 'rounded-2xl p-6 border-2 animate-scaleIn';
+            
+            const sentimentColors = {
+                'POSITIVE': { 
+                    bg: 'bg-emerald-50', 
+                    border: 'border-emerald-300', 
+                    text: 'text-emerald-600',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>'
+                },
+                'NEGATIVE': { 
+                    bg: 'bg-red-50', 
+                    border: 'border-red-300', 
+                    text: 'text-red-600',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>'
+                },
+                'NEUTRAL': { 
+                    bg: 'bg-gray-50', 
+                    border: 'border-gray-300', 
+                    text: 'text-gray-600',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>'
+                }
+            };
+
+            const colors = sentimentColors[sentiment];
+            sentimentCard.classList.add(colors.bg, colors.border);
+            document.getElementById('sentimentText').className = `text-4xl font-bold mb-2 ${colors.text}`;
+            sentimentIcon.innerHTML = colors.icon;
+            sentimentIcon.className = `w-5 h-5 mr-2 ${colors.text}`;
+
+            document.getElementById('posProb').textContent = `${(data.probabilities.positive * 100).toFixed(1)}%`;
+            document.getElementById('neuProb').textContent = `${(data.probabilities.neutral * 100).toFixed(1)}%`;
+            document.getElementById('negProb').textContent = `${(data.probabilities.negative * 100).toFixed(1)}%`;
+
+            document.getElementById('posBar').style.width = `${data.probabilities.positive * 100}%`;
+            document.getElementById('neuBar').style.width = `${data.probabilities.neutral * 100}%`;
+            document.getElementById('negBar').style.width = `${data.probabilities.negative * 100}%`;
+
+            document.getElementById('resultsBox').classList.remove('hidden');
+            document.getElementById('resultsBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // ===== NEWS FEED PAGE FUNCTIONS =====
+        async function loadNewsFeed() {
+            try {
+                const { data, error } = await supabase
+                    .from('sentiment_analyses')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allArticles = data || [];
+                updateNewsStats();
+                renderNewsArticles();
+            } catch (err) {
+                console.error('Error loading news feed:', err);
+                showToast('Failed to load news feed', 'error');
+            }
+        }
+
+        function updateNewsStats() {
+            const total = allArticles.length;
+            const positive = allArticles.filter(a => a.sentiment === 'positive').length;
+            const neutral = allArticles.filter(a => a.sentiment === 'neutral').length;
+            const negative = allArticles.filter(a => a.sentiment === 'negative').length;
+
+            // Animate counting
+            animateCounter('totalNewsCount', total);
+            animateCounter('positiveNewsCount', positive);
+            animateCounter('neutralNewsCount', neutral);
+            animateCounter('negativeNewsCount', negative);
+        }
+
+        function animateCounter(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            const startValue = parseInt(element.textContent) || 0;
+            const duration = 1000;
+            const startTime = performance.now();
+            
+            function updateCounter(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+                
+                const currentValue = Math.floor(startValue + (targetValue - startValue) * progress);
+                element.textContent = currentValue;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                }
+            }
+            
+            requestAnimationFrame(updateCounter);
+        }
+
+        function renderNewsArticles() {
+            const container = document.getElementById('newsArticlesContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            let filteredArticles = allArticles;
+            
+            // Apply sentiment filter
+            if (currentFilter !== 'all') {
+                filteredArticles = filteredArticles.filter(a => a.sentiment === currentFilter);
+            }
+            
+            // Apply search filter
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            if (searchTerm) {
+                filteredArticles = filteredArticles.filter(a => 
+                    a.text.toLowerCase().includes(searchTerm) ||
+                    (a.ticker && a.ticker.toLowerCase().includes(searchTerm)) ||
+                    (a.source && a.source.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            if (filteredArticles.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = filteredArticles.map((article, index) => 
+                createArticleCard(article, index)
+            ).join('');
+            
+            // Re-apply stagger animation
+            container.classList.remove('stagger-animation');
+            void container.offsetWidth; // Trigger reflow
+            container.classList.add('stagger-animation');
+        }
+
+        function createArticleCard(article, index) {
+            const sentiment = article.sentiment;
+            const sentimentConfig = {
+                'positive': {
+                    bg: 'bg-emerald-50 border-emerald-200',
+                    badgeBg: 'bg-emerald-100 text-emerald-700',
+                    barColor: 'bg-emerald-500',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>'
+                },
+                'negative': {
+                    bg: 'bg-red-50 border-red-200',
+                    badgeBg: 'bg-red-100 text-red-700',
+                    barColor: 'bg-red-500',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>'
+                },
+                'neutral': {
+                    bg: 'bg-gray-50 border-gray-200',
+                    badgeBg: 'bg-gray-100 text-gray-700',
+                    barColor: 'bg-gray-600',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>'
+                }
+            };
+
+            const config = sentimentConfig[sentiment];
+            const date = new Date(article.created_at);
+            const formattedDate = date.toLocaleString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            const title = article.ticker 
+                ? `${article.ticker} - Financial Analysis`
+                : 'Financial News Analysis';
+
+            return `
+                <div class="bg-white rounded-xl border-2 ${config.bg} p-6 mb-4 hover-lift" style="animation-delay: ${index * 0.1}s">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-900">${title}</h3>
+                        <button onclick="deleteArticle('${article.id}')" class="text-gray-400 hover:text-red-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 ${config.badgeBg} rounded-full text-xs font-medium">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${config.icon}
+                            </svg>
+                            ${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}
+                        </span>
+                        <span class="text-sm text-gray-600">${(article.confidence * 100).toFixed(1)}% Confidence</span>
+                        ${article.source ? `
+                            <span class="text-sm text-gray-400">•</span>
+                            <span class="flex items-center gap-1 text-sm text-gray-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                                </svg>
+                                ${article.source}
+                            </span>
+                        ` : ''}
+                    </div>
+
+                    <p class="text-gray-700 mb-4 leading-relaxed">${article.text.substring(0, 300)}${article.text.length > 300 ? '...' : ''}</p>
+
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="font-medium text-gray-700">Positive</span>
+                            <span class="font-bold text-gray-900">${(article.positive_prob * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="h-full bg-emerald-500 rounded-full animate-slideIn" style="width: ${article.positive_prob * 100}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="font-medium text-gray-700">Neutral</span>
+                            <span class="font-bold text-gray-900">${(article.neutral_prob * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="h-full bg-gray-600 rounded-full animate-slideIn" style="width: ${article.neutral_prob * 100}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="font-medium text-gray-700">Negative</span>
+                            <span class="font-bold text-gray-900">${(article.negative_prob * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="h-full bg-red-500 rounded-full animate-slideIn" style="width: ${article.negative_prob * 100}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        ${formattedDate}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function deleteArticle(id) {
+            if (!confirm('Are you sure you want to delete this article?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('sentiment_analyses')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadNewsFeed();
+                showToast('Article deleted successfully', 'success');
+            } catch (err) {
+                console.error('Error deleting article:', err);
+                showToast('Failed to delete article', 'error');
+            }
+        }
+
+        function filterBySentiment(sentiment) {
+            currentFilter = sentiment;
+            
+            // Update button styles
+            const buttons = {
+                'all': 'filterAll',
+                'positive': 'filterPositive',
+                'neutral': 'filterNeutral',
+                'negative': 'filterNegative'
+            };
+            
+            Object.keys(buttons).forEach(key => {
+                const btn = document.getElementById(buttons[key]);
+                if (key === sentiment) {
+                    btn.className = 'px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition-colors btn-animate';
+                } else {
+                    btn.className = 'px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors btn-animate';
+                }
+            });
+            
+            renderNewsArticles();
+        }
+
+        function filterNews() {
+            renderNewsArticles();
+        }
+
+        async function refreshNewsFeed() {
+            await loadNewsFeed();
+            showToast('News feed refreshed', 'success');
+        }
+
+        // ===== INSIGHTS PAGE FUNCTIONS =====
+        async function loadInsights() {
+            try {
+                // Get all analyses
+                const { data: analyses, error: analysesError } = await supabase
+                    .from('sentiment_analyses')
+                    .select('*');
+
+                if (analysesError) throw analysesError;
+
+                const total = analyses.length;
+                const positive = analyses.filter(a => a.sentiment === 'positive').length;
+                const neutral = analyses.filter(a => a.sentiment === 'neutral').length;
+                const negative = analyses.filter(a => a.sentiment === 'negative').length;
+
+                const avgConfidence = total > 0 
+                    ? (analyses.reduce((sum, a) => sum + a.confidence, 0) / total * 100).toFixed(1)
+                    : 0;
+
+                const positivePercent = total > 0 ? ((positive / total) * 100).toFixed(1) : 0;
+                const neutralPercent = total > 0 ? ((neutral / total) * 100).toFixed(1) : 0;
+                const negativePercent = total > 0 ? ((negative / total) * 100).toFixed(1) : 0;
+
+                // Update stats cards with animation
+                animateCounter('insightsTotalCount', total);
+                animateCounter('insightsPositiveCount', positive);
+                animateCounter('insightsNegativeCount', negative);
+                
+                // Animate percentage values
+                animateValue('insightsAvgConfidence', avgConfidence, '%');
+                animateValue('overviewPositivePercent', positivePercent, '%');
+                animateValue('overviewNeutralPercent', neutralPercent, '%');
+                animateValue('overviewNegativePercent', negativePercent, '%');
+                animateValue('insightsPositivePercentBadge', positivePercent, '%');
+                animateValue('insightsNegativePercentBadge', negativePercent, '%');
+                
+                // Update distribution
+                document.getElementById('distPositiveLabel').textContent = `${positive} (${positivePercent}%)`;
+                document.getElementById('distNeutralLabel').textContent = `${neutral} (${neutralPercent}%)`;
+                document.getElementById('distNegativeLabel').textContent = `${negative} (${negativePercent}%)`;
+                
+                // Animate bars
+                animateBar('distPositiveBar', positivePercent);
+                animateBar('distNeutralBar', neutralPercent);
+                animateBar('distNegativeBar', negativePercent);
+
+                // Update quick stats
+                animateValue('quickStatsConfidence', avgConfidence, '%');
+                
+                let mostCommon = 'N/A';
+                let mostCommonClass = 'bg-gray-100 text-gray-700';
+                if (positive >= neutral && positive >= negative && positive > 0) {
+                    mostCommon = 'Positive';
+                    mostCommonClass = 'bg-emerald-100 text-emerald-700';
+                } else if (negative >= neutral && negative >= positive && negative > 0) {
+                    mostCommon = 'Negative';
+                    mostCommonClass = 'bg-red-100 text-red-700';
+                } else if (neutral > 0) {
+                    mostCommon = 'Neutral';
+                    mostCommonClass = 'bg-gray-100 text-gray-700';
+                }
+                
+                const mostCommonEl = document.getElementById('quickStatsMostCommon');
+                mostCommonEl.textContent = mostCommon;
+                mostCommonEl.className = `px-2 py-1 rounded text-xs font-medium ${mostCommonClass}`;
+
+                // Calculate this week's analyses
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                const thisWeek = analyses.filter(a => new Date(a.created_at) >= oneWeekAgo).length;
+                animateCounter('quickStatsThisWeek', thisWeek);
+
+                // Load activity chart
+                await loadActivityChart(analyses);
+
+                // Load top sources
+                await loadTopSources();
+
+            } catch (err) {
+                console.error('Error loading insights:', err);
+                showToast('Failed to load insights', 'error');
+            }
+        }
+
+        function animateValue(elementId, targetValue, suffix = '') {
+            const element = document.getElementById(elementId);
+            const startValue = parseFloat(element.textContent) || 0;
+            const duration = 1000;
+            const startTime = performance.now();
+            
+            function updateValue(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1);
+                
+                const currentValue = (startValue + (targetValue - startValue) * progress).toFixed(1);
+                element.textContent = currentValue + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateValue);
+                }
+            }
+            
+            requestAnimationFrame(updateValue);
+        }
+
+        function animateBar(elementId, targetWidth) {
+            const element = document.getElementById(elementId);
+            element.style.width = '0%';
+            
+            setTimeout(() => {
+                element.style.width = `${targetWidth}%`;
+            }, 100);
+        }
+
+        async function loadActivityChart(analyses) {
+            const activityChart = document.getElementById('activityChart');
+            const activityLabels = document.getElementById('activityLabels');
+            
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date();
+            const last7Days = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                date.setHours(0, 0, 0, 0);
+                last7Days.push(date);
+            }
+            
+            const counts = last7Days.map(date => {
+                const nextDay = new Date(date);
+                nextDay.setDate(nextDay.getDate() + 1);
+                return analyses.filter(a => {
+                    const aDate = new Date(a.created_at);
+                    return aDate >= date && aDate < nextDay;
+                }).length;
+            });
+            
+            const maxCount = Math.max(...counts, 1);
+            
+            activityChart.innerHTML = counts.map((count, index) => {
+                const height = (count / maxCount) * 100;
+                return `<div class="flex-1 bg-purple-200 rounded-t hover:bg-purple-300 transition-colors chart-bar" style="height: ${height}%; animation-delay: ${index * 0.1}s"></div>`;
+            }).join('');
+            
+            activityLabels.innerHTML = last7Days.map(date => 
+                `<span>${dayNames[date.getDay()]}</span>`
+            ).join('');
+        }
+
+        async function loadTopSources() {
+            try {
+                const { data, error } = await supabase
+                    .from('sentiment_analyses')
+                    .select('source');
+
+                if (error) throw error;
+
+                const sourceCounts = {};
+                data.forEach(item => {
+                    if (item.source) {
+                        sourceCounts[item.source] = (sourceCounts[item.source] || 0) + 1;
+                    }
+                });
+
+                const sortedSources = Object.entries(sourceCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                const topSourcesList = document.getElementById('topSourcesList');
+                const noSourcesMessage = document.getElementById('noSourcesMessage');
+
+                if (sortedSources.length === 0) {
+                    topSourcesList.innerHTML = '';
+                    noSourcesMessage.classList.remove('hidden');
+                    return;
+                }
+
+                noSourcesMessage.classList.add('hidden');
+                topSourcesList.innerHTML = sortedSources.map((item, index) => `
+                    <div class="flex items-center gap-3 animate-slideInFromLeft" style="animation-delay: ${index * 0.1}s">
+                        <div class="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">${index + 1}</div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-900">${item[0]}</p>
+                            <p class="text-xs text-gray-500">${item[1]} article${item[1] > 1 ? 's' : ''}</p>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error('Error loading top sources:', err);
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('FinBERT Analyzer initialized');
+            console.log('Supabase client created');
+        });
+    </script>
+</body>
+</html>
